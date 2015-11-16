@@ -35,15 +35,15 @@ function processArray (array, output, nested) {
   var oneOf
   var type
 
-  if (nested && output) {
-    output = {
-      items: output
-    }
-  } else {
+  // if (nested && output) {
+  //   output = {
+  //     items: output
+  //   }
+  // } else {
     output = output || {}
     output.type = Type.string(array).toLowerCase()
     output.items = output.items || {}
-  }
+  // }
 
   // Determine whether each item is different
   for (var index = 0, length = array.length; index < length; index++) {
@@ -77,38 +77,46 @@ function processArray (array, output, nested) {
             output.items.required = getUniqueKeys(output.items.properties, value, output.items.required)
           }
 
-          processOutput = processObject(value, oneOf ? {} : output.items.properties, true)
+          // processOutput = processObject(value, oneOf ? {} : output.items.properties, true)
+          processOutput = processObject(value)
+          processOutput.id = index
           break
 
         case "array":
           processOutput = processArray(value, oneOf ? {} : output.items.properties, true)
+          processOutput.id = index
           break
 
         default:
-          processOutput = { type: itemType }
+          processOutput = {
+            id: index,
+            type: itemType,
+
+          }
       }
 
       if (oneOf) {
         output.items.oneOf.push(processOutput)
       } else {
-        output.items.properties = processOutput
+        output.items.properties = processOutput.properties
       }
     }
   }
 
-  return nested ? output.items : output
+  // return nested ? output.items : output
+  return output
 }
 
-function processObject (object, output, nested) {
-  if (nested && output) {
-    output = {
-      properties: output
-    }
-  } else {
+function processObject (object, output, nested, id) {
+  // if (nested && output) {
+  //   output = {
+  //     properties: output
+  //   }
+  // } else {
     output = output || {}
     output.type = Type.string(object).toLowerCase()
     output.properties = output.properties || {}
-  }
+  // }
 
   for (var key in object) {
     var value = object[key]
@@ -121,20 +129,24 @@ function processObject (object, output, nested) {
     switch (type) {
       case "object":
         output.properties[key] = processObject(value)
+        output.properties[key].id = key
         break
 
       case "array":
         output.properties[key] = processArray(value)
+        output.properties[key].id = key
         break
 
       default:
         output.properties[key] = {
-          type: type
+          type: type,
+          id: key
         }
     }
   }
 
-  return nested ? output.properties : output
+  // return nested ? output.properties : output
+  return output
 }
 
 module.exports = function (title, object) {
